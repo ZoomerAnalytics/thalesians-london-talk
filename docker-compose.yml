@@ -1,0 +1,29 @@
+version: '3.5'
+services:
+  worker:
+    build: ./
+    image: worker
+    restart: "no"
+    environment: &env
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+      - FLOWER_BROKER=redis://redis:6379/0
+    command: ["celery", "worker", "--app=worker.app", "--concurrency=2", "--hostname=worker@%h", "--loglevel=INFO"]
+    volumes:
+      - ./app:/app
+    depends_on:
+      - redis
+
+  flower:
+    image: zoomeranalytics/flower:0.9.1-4.0.2
+    restart: "no"
+    environment: *env
+    ports:
+      - 5555:5555
+    depends_on:
+      - redis
+
+  redis:
+    image: redis:4
+    ports:
+      - 6379:6379
